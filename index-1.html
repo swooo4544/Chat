@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>다온 — 함께 있어주는 대화</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;1,400&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #1b1930;
+    --bg-deep: #14122480;
+    --panel: #221f3a;
+    --text-primary: #f2ede4;
+    --text-secondary: #a79fc2;
+    --text-faint: #6f6890;
+    --accent: #e8a672;
+    --accent-soft: rgba(232,166,114,0.16);
+    --accent-softer: rgba(232,166,114,0.08);
+    --user-bubble: #34305a;
+    --divider: #322e52;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: 'Manrope', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    background:
+      radial-gradient(ellipse 600px 400px at 50% -10%, var(--accent-softer), transparent 60%),
+      var(--bg);
+  }
+
+  #app {
+    height: 100dvh;
+    max-width: 560px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  /* Header */
+  header {
+    flex-shrink: 0;
+    padding: 28px 24px 18px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    border-bottom: 1px solid var(--divider);
+  }
+
+  .header-text { flex: 1; min-width: 0; }
+  .header-text h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .header-text p { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  #settings-btn {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: transparent;
+    border: 1px solid var(--divider);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.15s;
+  }
+  #settings-btn svg { width: 18px; height: 18px; }
+  #settings-btn:hover { border-color: var(--accent); }
+  #settings-btn:active { transform: scale(0.92); }
+
+  /* Settings modal */
+  #modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 9, 20, 0.72);
+    display: none;
+    align-items: flex-end;
+    justify-content: center;
+    z-index: 20;
+  }
+  #modal-overlay.open { display: flex; }
+
+  #modal {
+    width: 100%;
+    max-width: 560px;
+    max-height: 88vh;
+    overflow-y: auto;
+    background: var(--panel);
+    border-radius: 20px 20px 0 0;
+    padding: 26px 24px 28px;
+    border-top: 1px solid var(--divider);
+    animation: slideup 0.28s ease both;
+  }
+
+  @keyframes slideup {
+    from { transform: translateY(16px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  #modal h2 {
+    font-family: 'Lora', serif;
+    font-weight: 500;
+    font-size: 19px;
+    margin: 0 0 4px;
+  }
+  #modal .modal-sub {
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin: 0 0 22px;
+  }
+
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+  .field input, .field textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--divider);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-family: 'Manrope', sans-serif;
+    font-size: 14.5px;
+    padding: 11px 12px;
+    outline: none;
+    resize: vertical;
+    line-height: 1.5;
+  }
+  .field input:focus, .field textarea:focus { border-color: var(--accent); }
+  .field textarea { min-height: 64px; }
+  .field .hint { font-size: 11.5px; color: var(--text-faint); margin-top: 5px; }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 22px;
+  }
+  .modal-actions button {
+    flex: 1;
+    padding: 13px;
+    border-radius: 12px;
+    border: none;
+    font-family: 'Manrope', sans-serif;
+    font-size: 14.5px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  #modal-cancel {
+    background: transparent;
+    border: 1px solid var(--divider);
+    color: var(--text-secondary);
+  }
+  #modal-save {
+    background: var(--accent);
+    color: #1b1930;
+  }
+  #clear-memory {
+    display: block;
+    margin: 16px auto 0;
+    padding: 8px 12px;
+    background: transparent;
+    border: 1px solid var(--divider);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+
+  .safety-note {
+    margin-top: 18px;
+    padding-top: 16px;
+    border-top: 1px solid var(--divider);
+    font-size: 11.5px;
+    color: var(--text-faint);
+    line-height: 1.6;
+  }
+
+  .presence {
+    position: relative;
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+  }
+
+  .presence .core {
+    position: absolute;
+    inset: 9px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  .presence .glow {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--accent-soft), transparent 70%);
+    animation: breathe 4.5s ease-in-out infinite;
+  }
+
+  @keyframes breathe {
+    0%, 100% { transform: scale(0.85); opacity: 0.6; }
+    50% { transform: scale(1.25); opacity: 1; }
+  }
+
+  .header-text h1 {
+    font-family: 'Lora', serif;
+    font-weight: 500;
+    font-size: 21px;
+    margin: 0 0 2px;
+    letter-spacing: 0.2px;
+  }
+
+  .header-text p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  /* Chat area */
+  #chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 28px 24px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    scroll-behavior: smooth;
+  }
+
+  #chat::-webkit-scrollbar { width: 6px; }
+  #chat::-webkit-scrollbar-thumb { background: var(--divider); border-radius: 4px; }
+
+  .msg {
+    max-width: 100%;
+    animation: rise 0.4s ease both;
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .msg.companion {
+    font-family: 'Lora', serif;
+    font-size: 16.5px;
+    line-height: 1.75;
+    color: var(--text-primary);
+    max-width: 92%;
+  }
+
+  .msg.companion .label {
+    display: block;
+    font-family: 'Manrope', sans-serif;
+    font-size: 11.5px;
+    color: var(--accent);
+    margin-bottom: 6px;
+    font-weight: 600;
+  }
+
+  .msg.user {
+    align-self: flex-end;
+    background: var(--user-bubble);
+    color: var(--text-primary);
+    padding: 12px 16px;
+    border-radius: 16px 16px 4px 16px;
+    font-size: 15px;
+    line-height: 1.55;
+    max-width: 80%;
+  }
+
+  .typing {
+    display: flex;
+    gap: 5px;
+    padding: 4px 0;
+  }
+
+  .typing span {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    opacity: 0.5;
+    animation: bounce 1.2s ease-in-out infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: 0.15s; }
+  .typing span:nth-child(3) { animation-delay: 0.3s; }
+
+  @keyframes bounce {
+    0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+    30% { transform: translateY(-4px); opacity: 1; }
+  }
+
+  /* Input bar */
+  #input-bar {
+    flex-shrink: 0;
+    padding: 14px 20px 22px;
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+    border-top: 1px solid var(--divider);
+    background: var(--bg);
+  }
+
+  #input-bar textarea {
+    flex: 1;
+    resize: none;
+    background: var(--panel);
+    border: 1px solid var(--divider);
+    border-radius: 14px;
+    color: var(--text-primary);
+    font-family: 'Manrope', sans-serif;
+    font-size: 15px;
+    padding: 12px 14px;
+    max-height: 120px;
+    line-height: 1.5;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  #input-bar textarea:focus {
+    border-color: var(--accent);
+  }
+
+  #input-bar textarea::placeholder {
+    color: var(--text-faint);
+  }
+
+  #send-btn {
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.15s, opacity 0.15s;
+  }
+
+  #send-btn:active { transform: scale(0.92); }
+  #send-btn:disabled { opacity: 0.4; cursor: default; }
+
+  #send-btn svg { width: 18px; height: 18px; }
+
+  .footnote {
+    text-align: center;
+    font-size: 11px;
+    color: var(--text-faint);
+    padding: 0 24px 14px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .presence .glow, .typing span, .msg { animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <div class="presence">
+      <div class="glow"></div>
+      <div class="core"></div>
+    </div>
+    <div class="header-text">
+      <h1 id="char-name">다온</h1>
+      <p id="char-subtitle">오늘 하루, 여기서 편하게 얘기해요</p>
+    </div>
+    <button id="settings-btn" aria-label="상황 설정">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 15a3 3 0 100-6 3 3 0 000 6z" stroke="#a79fc2" stroke-width="1.6"/>
+        <path d="M19.4 13a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V19a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H4a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H10a1.65 1.65 0 001-1.51V4a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V10a1.65 1.65 0 001.51 1H20a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="#a79fc2" stroke-width="1.6"/>
+      </svg>
+    </button>
+  </header>
+
+  <div id="chat"></div>
+
+  <div class="footnote">AI 대화 · 기록과 기억은 이 브라우저에 저장돼요</div>
+
+  <div id="input-bar">
+    <textarea id="user-input" rows="1" maxlength="1200" placeholder="어떤 하루였는지 들려주세요..."></textarea>
+    <button id="send-btn" aria-label="보내기">
+      <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M4 12L20 4L14 20L11 13L4 12Z" fill="#1b1930"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<div id="modal-overlay">
+  <div id="modal">
+    <h2>상황 설정</h2>
+    <p class="modal-sub">가상의 대화 상대와 첫 상황을 정해 보세요. AI가 그 설정을 참고해 대답해요.</p>
+
+    <div class="field">
+      <label for="f-name">이름</label>
+      <input id="f-name" type="text" maxlength="20" placeholder="예: 서연" />
+    </div>
+
+    <div class="field">
+      <label for="f-situation">어떤 상황에서 만났나요?</label>
+      <textarea id="f-situation" maxlength="300" placeholder="예: 동네 책방에서 같은 책을 고르다가 오늘 처음 인사를 나눴다"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="f-background">이 사람은 어떤 사람인가요?</label>
+      <textarea id="f-background" maxlength="300" placeholder="예: 조용하지만 은근히 장난기 있음. 말수는 적어도 얘기를 시작하면 다정하게 잘 들어줌. 재즈를 좋아함"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="f-relationship">저와는 어떤 관계인가요? <span style="font-weight:400;color:var(--text-faint)">(선택)</span></label>
+      <input id="f-relationship" type="text" maxlength="80" placeholder="예: 방금 만난 사이 / 오랜 친구 / 동료" />
+      <p class="hint">비워두면 '방금 만난 사이'로 시작해요</p>
+    </div>
+
+    <div class="modal-actions">
+      <button id="modal-cancel">취소</button>
+      <button id="modal-save">이 설정으로 시작</button>
+    </div>
+    <button id="clear-memory" type="button">대화와 기억 지우기</button>
+
+    <p class="safety-note">AI와의 대화예요. 실존 인물 사칭이나 부적절한 설정은 반영되지 않아요.</p>
+  </div>
+</div>
+
+<script>
+  const chatEl = document.getElementById('chat');
+  const inputEl = document.getElementById('user-input');
+  const sendBtn = document.getElementById('send-btn');
+
+
+  const DEFAULT_PERSONA = {
+    name: '다온',
+    situation: '',
+    background: '판단하지 않고 진심으로 귀 기울이며 공감하는 따뜻한 컴패니언. 사용자의 감정을 있는 그대로 인정해주되 과장되게 반응하지 않는다.',
+    relationship: '편하게 마음을 터놓을 수 있는 사이'
+  };
+
+  let persona = { ...DEFAULT_PERSONA };
+  let history = [];
+  let conversationId = 0;
+  let memory = '';
+  let turns = 0;
+  let lastSummaryTurn = 0;
+  let memoryBusy = false;
+  const STORAGE_KEY = 'daon-chat-v1';
+
+  function saveConversation() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        persona, history: history.slice(-80), memory, turns, lastSummaryTurn
+      }));
+    } catch (error) {
+      console.warn('대화 기록을 저장하지 못했어요.', error);
+    }
+  }
+
+  function resetConversation() {
+    history = [];
+    memory = '';
+    turns = 0;
+    lastSummaryTurn = 0;
+  }
+
+  async function refreshMemory() {
+    if (memoryBusy || turns - lastSummaryTurn < 12) return;
+    memoryBusy = true;
+    const activeId = conversationId;
+    const summarizedThrough = turns;
+    try {
+      const response = await fetch('/api/memory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          characterId: 'daon',
+          previousMemory: memory,
+          messages: history.slice(-30)
+        })
+      });
+      if (!response.ok) throw new Error('기억 갱신 실패');
+      const data = await response.json();
+      if (activeId === conversationId && typeof data.memory === 'string') {
+        memory = data.memory.slice(0, 5000);
+        lastSummaryTurn = summarizedThrough;
+        saveConversation();
+      }
+    } catch (error) {
+      console.warn('기억을 나중에 다시 갱신할게요.', error);
+    } finally {
+      memoryBusy = false;
+    }
+  }
+
+  async function requestReply() {
+    const response = await fetch('/api/daon', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ persona, memory, messages: history.slice(-24) }),
+      signal: AbortSignal.timeout(30000)
+    });
+    const data = await response.json();
+    if (!response.ok || !data.reply) throw new Error(data.error || 'AI가 응답하지 않았어요.');
+    return data.reply;
+  }
+
+
+  function addMessage(role, text, { skipHistory = false } = {}) {
+    const div = document.createElement('div');
+    div.className = 'msg ' + (role === 'user' ? 'user' : 'companion');
+    if (role === 'assistant') {
+      const label = document.createElement('span');
+      label.className = 'label';
+      label.textContent = persona.name;
+      div.appendChild(label);
+      div.appendChild(document.createTextNode(text));
+    } else {
+      div.textContent = text;
+    }
+    chatEl.appendChild(div);
+    chatEl.scrollTop = chatEl.scrollHeight;
+    if (!skipHistory) {
+      history.push({ role, content: text });
+      history = history.slice(-80);
+      if (role === 'assistant') turns++;
+      saveConversation();
+      if (role === 'assistant') void refreshMemory();
+    }
+    return div;
+  }
+
+  function showTyping() {
+    const div = document.createElement('div');
+    div.className = 'msg companion';
+    div.id = 'typing-indicator';
+    const label = document.createElement('span');
+    label.className = 'label';
+    label.textContent = persona.name;
+    div.appendChild(label);
+    const typing = document.createElement('div');
+    typing.className = 'typing';
+    typing.innerHTML = '<span></span><span></span><span></span>';
+    div.appendChild(typing);
+    chatEl.appendChild(div);
+    chatEl.scrollTop = chatEl.scrollHeight;
+  }
+
+  function hideTyping() {
+    const el = document.getElementById('typing-indicator');
+    if (el) el.remove();
+  }
+
+  async function getReply() {
+    const activeId = conversationId;
+    showTyping();
+    try {
+      const text = await requestReply();
+      if (activeId !== conversationId) return;
+      hideTyping();
+      addMessage('assistant', text);
+    } catch (err) {
+      if (activeId !== conversationId) return;
+      hideTyping();
+      addMessage('assistant', '연결에 문제가 있어요. 잠시 후 다시 보내 주세요.', { skipHistory: true });
+      console.error(err);
+    }
+  }
+
+  function autoResize() {
+    inputEl.style.height = 'auto';
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 120) + 'px';
+  }
+
+  function send() {
+    const text = inputEl.value.trim();
+    if (!text || sendBtn.disabled) return;
+    addMessage('user', text);
+    inputEl.value = '';
+    autoResize();
+    sendBtn.disabled = true;
+    const activeId = conversationId;
+    getReply().finally(() => {
+      if (activeId === conversationId) { sendBtn.disabled = false; inputEl.focus(); }
+    });
+  }
+
+  sendBtn.addEventListener('click', send);
+  inputEl.addEventListener('input', autoResize);
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      send();
+    }
+  });
+
+  function startDefaultConversation() {
+    conversationId++;
+    chatEl.innerHTML = '';
+    resetConversation();
+    sendBtn.disabled = false;
+    const greeting = '안녕하세요, 저는 다온이에요. 오늘 하루는 어땠어요? 편하게 얘기해주면 제가 잘 들을게요.';
+    addMessage('assistant', greeting, { skipHistory: true });
+    history.push({ role: 'assistant', content: greeting });
+    saveConversation();
+  }
+
+  async function startCustomConversation() {
+    const activeId = ++conversationId;
+    chatEl.innerHTML = '';
+    resetConversation();
+    sendBtn.disabled = true;
+    saveConversation();
+    document.getElementById('char-name').textContent = persona.name;
+    document.getElementById('char-subtitle').textContent = persona.situation
+      ? persona.situation.slice(0, 40) + (persona.situation.length > 40 ? '…' : '')
+      : '이제 막 알아가는 사이';
+
+    // 화면에는 보이지 않는, 오프닝 대사를 이끌어내기 위한 내부 트리거 메시지
+    history.push({
+      role: 'user',
+      content: '(상황 시작) 지금 설정된 상황과 성격에 몰입해서, 상황 설명 없이 바로 첫 마디를 자연스럽게 건네줘.'
+    });
+
+    showTyping();
+    try {
+      const text = await requestReply();
+      if (activeId !== conversationId) return;
+      hideTyping();
+      history = [];
+      addMessage('assistant', text);
+    } catch (err) {
+      if (activeId !== conversationId) return;
+      hideTyping();
+      history = [];
+      addMessage('assistant', '첫 대화를 불러오지 못했어요. 메시지를 보내서 다시 시도해 주세요.', { skipHistory: true });
+      console.error(err);
+    } finally {
+      if (activeId === conversationId) sendBtn.disabled = false;
+    }
+  }
+
+  // --- 설정 모달 ---
+  const overlay = document.getElementById('modal-overlay');
+  const settingsBtn = document.getElementById('settings-btn');
+  const fName = document.getElementById('f-name');
+  const fSituation = document.getElementById('f-situation');
+  const fBackground = document.getElementById('f-background');
+  const fRelationship = document.getElementById('f-relationship');
+
+  function openModal() {
+    fName.value = persona.name === DEFAULT_PERSONA.name && !persona.situation ? '' : persona.name;
+    fSituation.value = persona.situation;
+    fBackground.value = persona.situation ? persona.background : '';
+    fRelationship.value = persona.relationship === DEFAULT_PERSONA.relationship ? '' : persona.relationship;
+    overlay.classList.add('open');
+  }
+  function closeModal() { overlay.classList.remove('open'); }
+
+  settingsBtn.addEventListener('click', openModal);
+  document.getElementById('modal-cancel').addEventListener('click', closeModal);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+  document.getElementById('clear-memory').addEventListener('click', () => {
+    if (!window.confirm('이 브라우저에 저장된 대화와 기억을 지울까요?')) return;
+    persona = { ...DEFAULT_PERSONA };
+    document.getElementById('char-name').textContent = persona.name;
+    document.getElementById('char-subtitle').textContent = '오늘 하루, 여기서 편하게 얘기해요';
+    closeModal();
+    startDefaultConversation();
+  });
+
+  document.getElementById('modal-save').addEventListener('click', () => {
+    const name = fName.value.trim();
+    const situation = fSituation.value.trim();
+    const background = fBackground.value.trim();
+    const relationship = fRelationship.value.trim();
+
+    if (!situation && !background) {
+      // 아무것도 입력하지 않았으면 기본 다온으로 되돌림
+      persona = { ...DEFAULT_PERSONA };
+      document.getElementById('char-name').textContent = persona.name;
+      document.getElementById('char-subtitle').textContent = '오늘 하루, 여기서 편하게 얘기해요';
+      closeModal();
+      startDefaultConversation();
+      return;
+    }
+
+    persona = {
+      name: name || '그 사람',
+      situation,
+      background: background || '차분하고 다정한 성격',
+      relationship
+    };
+    closeModal();
+    startCustomConversation();
+  });
+
+  function restoreConversation() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+      if (!saved || !saved.persona || !Array.isArray(saved.history)) return false;
+      const p = saved.persona;
+      if (typeof p.name !== 'string' || !p.name || p.name.length > 40 ||
+          typeof p.situation !== 'string' || typeof p.background !== 'string' ||
+          typeof p.relationship !== 'string') return false;
+      const messages = saved.history.slice(-80).filter(item =>
+        (item.role === 'user' || item.role === 'assistant') &&
+        typeof item.content === 'string' && item.content.length <= 2400
+      );
+      if (!messages.length) return false;
+      persona = p;
+      memory = typeof saved.memory === 'string' ? saved.memory.slice(0, 5000) : '';
+      turns = Number.isSafeInteger(saved.turns) ? Math.max(0, saved.turns) : 0;
+      lastSummaryTurn = Number.isSafeInteger(saved.lastSummaryTurn)
+        ? Math.min(turns, Math.max(0, saved.lastSummaryTurn)) : 0;
+      document.getElementById('char-name').textContent = persona.name;
+      document.getElementById('char-subtitle').textContent = persona.situation
+        ? persona.situation.slice(0, 40) : '오늘 하루, 여기서 편하게 얘기해요';
+      for (const item of messages) addMessage(item.role, item.content, { skipHistory: true });
+      history = messages;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  if (!restoreConversation()) startDefaultConversation();
+</script>
+
+</body>
+</html>
